@@ -31,6 +31,9 @@ type Contributors struct {
 	Contributions int    `json:"contributions"`
 }
 
+//Lang has structure
+type Lang map[string]int
+
 func getAPIURL(url string) (link *http.Response) {
 	link, err := http.Get(url)
 	if err != nil {
@@ -39,25 +42,11 @@ func getAPIURL(url string) (link *http.Response) {
 	return
 }
 
-func readBody() {
-
-}
-
-func catchURL(number int) string {
-	switch number {
-	case 1:
-		return "https://api.github.com/repos/Stektpotet/Amazeking"
-	case 2:
-		return "https://api.github.com/repos/Stektpotet/Amazeking/contributors"
-	case 3:
-		return "https://api.github.com/repos/Stektpotet/Amazeking/languages"
-	}
-	return ""
-}
-
-//serveRest is the handler in this program
-func serveRest(w http.ResponseWriter, r *http.Request) {
-
+/*grabAndDecode will contain all code for working with data
+retrieved and unmarshal this into a working solution.
+Ofcourse this function could have been done smaller/better
+but unfortunately the time is running out and several assignments needs to be done.*/
+func grabAndDecode(p *Repository, c *[]Contributors, v *Lang) {
 	//Get response from url
 	repo := getAPIURL(catchURL(1))
 	cont := getAPIURL(catchURL(2))
@@ -82,11 +71,7 @@ func serveRest(w http.ResponseWriter, r *http.Request) {
 	if err3 != nil {
 		panic(err3)
 	}
-
-	//Unmarshalling the body into a payload
-	var p Repository
-	var c []Contributors
-	var v = make(map[string]int)
+	//Unmarshalling the body with variables
 
 	err1 = json.Unmarshal(body1, &p)
 	if err1 != nil {
@@ -102,23 +87,52 @@ func serveRest(w http.ResponseWriter, r *http.Request) {
 	if err3 != nil {
 		panic(err3)
 	}
+}
+
+/*catchURL I do not have enough time to work on a front end part where
+the user could write in the repo himself/herself, so I set a repo here*/
+func catchURL(number int) string {
+	switch number {
+	case 1:
+		return "https://api.github.com/repos/Stektpotet/Amazeking"
+	case 2:
+		return "https://api.github.com/repos/Stektpotet/Amazeking/contributors"
+	case 3:
+		return "https://api.github.com/repos/Stektpotet/Amazeking/languages"
+	}
+	return ""
+}
+
+//serveRest is the handler in this program
+func serveRest(w http.ResponseWriter, r *http.Request) {
+
+	var p Repository
+	var c []Contributors
+	var v Lang
+
+	grabAndDecode(&p, &c, &v)
 
 	//Working on end result
 	repos := string("github.com/" + p.FullName)
-	//Remember: var v = make(map[string]int)
 	keys := []string{}
 	for key := range v {
 		keys = append(keys, key)
 	}
-
 	//Printing end result
-	fmt.Fprintln(w, "Owner:         ", p.Owner.Username, "\nRepo:          ", repos)
+	/*fmt.Fprintln(w, "Owner:         ", p.Owner.Username, "\nRepo:          ", repos)
 	fmt.Fprintln(w, "Top committer: ", c[0].Login, "\nContributions: ", c[0].Contributions)
-	fmt.Fprintln(w, "Languages:     ", keys)
+	fmt.Fprintln(w, "Languages:     ", keys)*/
+
+	foo := &Data{Project: repos, Owner: p.Owner.Username, TopContributor: c[0].Login, Contributions: c[0].Contributions, Languages: keys}
+	bar, err := json.Marshal(foo)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Fprintln(w, string(bar))
 }
 
 /*Main retrieves data from a github api and displays
-some of this on (randomly generated name)
+some of this on
 https:secret-wave-88527.herokuapp.com/ */
 func main() {
 	http.HandleFunc("/", serveRest)
