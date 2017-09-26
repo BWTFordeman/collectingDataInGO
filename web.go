@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -20,8 +21,8 @@ type Data struct {
 
 //Repository has structure of some data
 type Repository struct {
-	FullName string `json:"full_name"`
-	Owner    struct {
+	Name  string `json:"name"`
+	Owner struct {
 		Username string `json:"login"`
 	} `json:"owner"`
 }
@@ -108,8 +109,15 @@ func catchURL(number int, url string) string {
 //getURL gets url for repo
 func getURL(repo1 string) string {
 	repo2 := strings.Split(repo1, "/")
-	url := string(repo2[4] + "/" + repo2[5])
-	return url
+	//	url := string(repo2[4] + "/" + repo2[5])
+	i := 0
+	for i < 30 {
+		i++
+		if repo2[i] == "github.com" {
+			return string(repo2[i+1] + "/" + repo2[i+2])
+		}
+	}
+	return ""
 }
 
 //serveRest is the handler in this program
@@ -124,7 +132,7 @@ func serveRest(w http.ResponseWriter, r *http.Request) {
 	grabAndDecode(getURL(repo1), &p, &c, &v)
 
 	//Working on end result
-	repos := string("github.com/" + p.FullName)
+	repos := string("github.com/" + p.Name)
 	keys := []string{}
 	for key := range v {
 		keys = append(keys, key)
@@ -133,7 +141,7 @@ func serveRest(w http.ResponseWriter, r *http.Request) {
 	foo := &Data{Project: repos, Owner: p.Owner.Username, TopContributor: c[0].Login, Contributions: c[0].Contributions, Languages: keys}
 	bar, err := json.Marshal(foo)
 	if err != nil {
-		panic(err)
+		//log.FPrintln("grabAndDecode, 'json.Marshal(foo)' line 142", err)
 	}
 	fmt.Fprintln(w, string(bar))
 }
@@ -145,6 +153,7 @@ func main() {
 	http.HandleFunc("/", serveRest)
 	err := http.ListenAndServe(":"+os.Getenv("PORT"), nil)
 	if err != nil {
-		panic(err)
+		log.Println("panic")
 	}
+	log.Println("http.ListenAndServe", http.ListenAndServe(":"+os.Getenv("PORT"), nil), nil)
 }

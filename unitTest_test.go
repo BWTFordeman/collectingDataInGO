@@ -15,8 +15,8 @@ func TestGrabAndDecode(t *testing.T) {
 	if p.Owner.Username != "apache" {
 		t.Errorf("ERROR expected: %s but got: %s", "apache", p.Owner.Username)
 	}
-	if p.FullName != "apache/kafka" {
-		t.Errorf("ERROR expected: %s but got: %s", "apache/kafka", p.FullName)
+	if p.Name != "kafka" {
+		t.Errorf("ERROR expected: %s but got: %s", "kafka", p.Name)
 	}
 	if c[0].Contributions != 315 {
 		t.Errorf("ERROR expected: %d but got: %d", 315, c[0].Contributions)
