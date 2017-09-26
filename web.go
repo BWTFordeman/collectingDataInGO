@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 )
 
 //Data Gets the different data recieved
@@ -46,11 +47,11 @@ func getAPIURL(url string) (link *http.Response) {
 retrieved and unmarshal this into a working solution.
 Ofcourse this function could have been done smaller/better
 but unfortunately the time is running out and several assignments needs to be done.*/
-func grabAndDecode(p *Repository, c *[]Contributors, v *Lang) {
+func grabAndDecode(url string, p *Repository, c *[]Contributors, v *Lang) {
 	//Get response from url
-	repo := getAPIURL(catchURL(1))
-	cont := getAPIURL(catchURL(2))
-	lang := getAPIURL(catchURL(3))
+	repo := getAPIURL(catchURL(1, url))
+	cont := getAPIURL(catchURL(2, url))
+	lang := getAPIURL(catchURL(3, url))
 
 	defer repo.Body.Close()
 	defer cont.Body.Close()
@@ -91,26 +92,36 @@ func grabAndDecode(p *Repository, c *[]Contributors, v *Lang) {
 
 /*catchURL I do not have enough time to work on a front end part where
 the user could write in the repo himself/herself, so I set a repo here*/
-func catchURL(number int) string {
+func catchURL(number int, url string) string {
+
 	switch number {
 	case 1:
-		return "https://api.github.com/repos/Stektpotet/Amazeking"
+		return string("https://api.github.com/repos/" + url)
 	case 2:
-		return "https://api.github.com/repos/Stektpotet/Amazeking/contributors"
+		return string("https://api.github.com/repos/" + url + "/contributors")
 	case 3:
-		return "https://api.github.com/repos/Stektpotet/Amazeking/languages"
+		return string("https://api.github.com/repos/" + url + "/languages")
 	}
 	return ""
 }
 
+//getURL gets url for repo
+func getURL(repo1 string) string {
+	repo2 := strings.Split(repo1, "/")
+	url := string(repo2[4] + "/" + repo2[5])
+	return url
+}
+
 //serveRest is the handler in this program
 func serveRest(w http.ResponseWriter, r *http.Request) {
+	//Gets repo:
+	repo1 := r.URL.Path
 
 	var p Repository
 	var c []Contributors
 	var v Lang
 
-	grabAndDecode(&p, &c, &v)
+	grabAndDecode(getURL(repo1), &p, &c, &v)
 
 	//Working on end result
 	repos := string("github.com/" + p.FullName)
@@ -118,10 +129,6 @@ func serveRest(w http.ResponseWriter, r *http.Request) {
 	for key := range v {
 		keys = append(keys, key)
 	}
-	//Printing end result
-	/*fmt.Fprintln(w, "Owner:         ", p.Owner.Username, "\nRepo:          ", repos)
-	fmt.Fprintln(w, "Top committer: ", c[0].Login, "\nContributions: ", c[0].Contributions)
-	fmt.Fprintln(w, "Languages:     ", keys)*/
 
 	foo := &Data{Project: repos, Owner: p.Owner.Username, TopContributor: c[0].Login, Contributions: c[0].Contributions, Languages: keys}
 	bar, err := json.Marshal(foo)
